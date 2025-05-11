@@ -1,9 +1,9 @@
 // src/lib/data.ts
 
 import { createPool } from '@vercel/postgres';
-import { LatestInvoiceRaw, Revenue } from './definitions';
-import { formatCurrency } from './utils';
+import { InvoicesTable, LatestInvoiceRaw, Revenue } from './definitions';import { formatCurrency } from './utils';
 import { server$ } from '@builder.io/qwik-city';
+
 
 const getPool = server$(function () {
 
@@ -90,6 +90,69 @@ export const fetchCardData = server$(async function () {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch card data.');
+  } finally {
+    await pool.end();
+  }
+});
+
+const ITEMS_PER_PAGE = 6;
+
+export const fetchFilteredInvoices = server$(async function (
+  query: string,
+  currentPage: number,
+) {
+  const pool = await getPool();
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  try {
+    const invoices = await pool.query<InvoicesTable>(`
+      SELECT
+        invoices.id,
+        invoices.amount,
+        invoices.date,
+        invoices.status,
+        customers.name,
+        customers.email,
+        customers.image_url
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE
+        customers.name ILIKE $1 OR
+        customers.email ILIKE $1 OR
+        invoices.amount::text ILIKE $1 OR
+        invoices.date::text ILIKE $1 OR
+        invoices.status ILIKE $1
+      ORDER BY invoices.date DESC
+      LIMIT $2 OFFSET $3
+    `, [`%${query}%`, ITEMS_PER_PAGE, offset]);
+    return invoices.rows;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch invoices.');
+  } finally {
+    await pool.end();
+  }
+});
+
+export const fetchInvoicesPages = server$(async function (query: string) {
+  const pool = await getPool();
+  try {
+    const count = await pool.query(`SELECT COUNT(*)
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE
+        customers.name ILIKE $1 OR
+        customers.email ILIKE $1 OR
+        invoices.amount::text ILIKE $1 OR
+        invoices.date::text ILIKE $1 OR
+        invoices.status ILIKE $1
+    `, [`%${query}%`]);
+
+    const totalPages = Math.ceil(Number(count.rows[0].count) / ITEMS_PER_PAGE);
+    return totalPages;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch total number of invoices.');
   } finally {
     await pool.end();
   }
