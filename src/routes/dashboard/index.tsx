@@ -1,8 +1,19 @@
 import { component$ } from "@builder.io/qwik";
-import { useFetchData } from "./layout";
+import { routeLoader$ } from "@builder.io/qwik-city";
+import { fetchRevenue, fetchLatestInvoices, fetchCardData } from "~/lib/data";
 import { RevenueChart } from "~/components/ui/dashboard/revenue-chart";
 import { Card } from "~/components/ui/dashboard/cards";
 import { LatestInvoices } from "~/components/ui/dashboard/latest-invoices";
+
+export const useFetchData = routeLoader$(async () => {
+    const [revenue, latestInvoices, cardData] = await Promise.all([
+      fetchRevenue(),
+      fetchLatestInvoices(),
+      fetchCardData(),
+    ]);
+    return { revenue, latestInvoices, cardData };
+  });
+  
 
 export default component$(() => {
   const { revenue, latestInvoices, cardData } = useFetchData().value;
