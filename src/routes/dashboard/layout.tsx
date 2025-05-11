@@ -19,6 +19,16 @@ export const useFetchCardData = routeLoader$(async () => {
   return cardData;
 });
 
+export const useFetchData = routeLoader$(async () => {
+  const [revenue, latestInvoices, cardData] = await Promise.all([
+    fetchRevenue(),
+    fetchLatestInvoices(),
+    fetchCardData(),
+  ]);
+  return { revenue, latestInvoices, cardData };
+});
+
+
 
 
 export default component$(() => {

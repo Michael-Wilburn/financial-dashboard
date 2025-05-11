@@ -1,22 +1,17 @@
 import { component$ } from "@builder.io/qwik";
-import {
-    useFetchRevenue,
-    useFetchLatestInvoices,
-    useFetchCardData,
-  } from "./layout";
+import { useFetchData } from "./layout";
 import { RevenueChart } from "~/components/ui/dashboard/revenue-chart";
 import { Card } from "~/components/ui/dashboard/cards";
 import { LatestInvoices } from "~/components/ui/dashboard/latest-invoices";
 
 export default component$(() => {
-    const revenue = useFetchRevenue().value;
-    const latestInvoices = useFetchLatestInvoices().value;
-    const {
-        totalPaidInvoices,
-        totalPendingInvoices,
-        numberOfInvoices,
-        numberOfCustomers,
-      } = useFetchCardData().value;
+  const { revenue, latestInvoices, cardData } = useFetchData().value;
+  const {
+    totalPaidInvoices,
+    totalPendingInvoices,
+    numberOfInvoices,
+    numberOfCustomers,
+  } = cardData;
 
   return (
     <main>
